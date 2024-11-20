@@ -1,0 +1,11 @@
+[
+  {
+    "name": "OrderCollection",
+    "policy": "OR('CUSTOMERMSP.member', 'MOMSP.member','DMOMSP.member')",
+    "requiredPeerCount": 1,
+    "maxPeerCount": 1,
+    "blockToLive": 100,
+    "memberOnlyRead": true
+  }
+]
+  

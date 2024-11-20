@@ -1,0 +1,177 @@
+Organizations:
+  - &OrdererOrg
+    Name: OrdererOrg
+    ID: OrdererMSP
+    MSPDir: ../organizations/ordererOrganizations/fundflow.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('OrdererMSP.admin')"
+    OrdererEndpoints:
+      - orderer.fundflow.com:7050
+  - &CUSTOMER
+    Name: CUSTOMERMSP
+    ID: CUSTOMERMSP
+    MSPDir: ../organizations/peerOrganizations/CUSTOMER.fundflow.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('CUSTOMERMSP.admin', 'CUSTOMERMSP.peer', 'CUSTOMERMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('CUSTOMERMSP.admin', 'CUSTOMERMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('CUSTOMERMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('CUSTOMERMSP.peer')"
+  - &MO
+    Name: MOMSP
+    ID: MOMSP
+    MSPDir: ../organizations/peerOrganizations/MO.fundflow.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('MOMSP.admin', 'MOMSP.peer', 'MOMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('MOMSP.admin', 'MOMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('MOMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('MOMSP.peer')"
+
+  - &DMO
+    Name: DMOMSP
+    ID: DMOMSP
+    MSPDir: ../organizations/peerOrganizations/DMO.fundflow.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('DMOMSP.admin', 'DMOMSP.peer', 'DMOMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('DMOMSP.admin', 'DMOMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('DMOMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('DMOMSP.peer')"
+
+  - &DHS
+    Name: DHSMSP
+    ID: DHSMSP
+    MSPDir: ../organizations/peerOrganizations/DHS.fundflow.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('DHSMSP.admin', 'DHSMSP.peer', 'DHSMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('DHSMSP.admin', 'DHSMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('DHSMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('DHSMSP.peer')"
+
+Capabilities:
+  Channel: &ChannelCapabilities
+    V2_0: true
+  Orderer: &OrdererCapabilities
+    V2_0: true
+  Application: &ApplicationCapabilities
+    V2_5: true
+
+Application: &ApplicationDefaults
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    LifecycleEndorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+  Capabilities:
+    <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+  Addresses:
+    - orderer.fundflow.com:7050
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    <<: *ChannelCapabilities
+
+Profiles:
+  ThreeOrgsChannel:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      OrdererType: etcdraft
+      EtcdRaft:
+        Consenters:
+          - Host: orderer.fundflow.com
+            Port: 7050
+            ClientTLSCert: ../organizations/ordererOrganizations/fundflow.com/orderers/orderer.fundflow.com/tls/server.crt
+            ServerTLSCert: ../organizations/ordererOrganizations/fundflow.com/orderers/orderer.fundflow.com/tls/server.crt
+      Organizations:
+        - *OrdererOrg
+      Capabilities: *OrdererCapabilities
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *CUSTOMER
+        - *MO
+        - *DMO
+        - *DHS
+      Capabilities: *ApplicationCapabilities
