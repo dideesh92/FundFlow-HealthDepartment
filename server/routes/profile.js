@@ -25,6 +25,15 @@ let profile = {
 		"peerEndpoint": "localhost:11051",
 		"peerHostAlias":  "peer0.DMO.fundflow.com",
         "mspId": "DMOMSP"
+    },
+    DHS: {
+        "cryptoPath": "../work/organizations/peerOrganizations/DHS.fundflow.com", 
+		"keyDirectoryPath": "../work/organizations/peerOrganizations/DHS.fundflow.com/users/User1@DHS.fundflow.com/msp/keystore/",
+        "certPath":     "../work/organizations/peerOrganizations/DHS.fundflow.com/users/User1@DHS.fundflow.com/msp/signcerts/cert.pem",
+		"tlsCertPath":  "../work/organizations/peerOrganizations/DHS.fundflow.com/peers/peer0.DHS.fundflow.com/tls/ca.crt",
+		"peerEndpoint": "localhost:10051",
+		"peerHostAlias":  "peer0.DHS.fundflow.com",
+        "mspId": "DHSMSP"
     }
 }
 module.exports = { profile }

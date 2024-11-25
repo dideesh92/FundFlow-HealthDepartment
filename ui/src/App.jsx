@@ -12,6 +12,12 @@ import Homepage from './pages/Homepage';
 import MoDashboard from './pages/MoDashboard';
 import CustomerDashboard from './pages/CustomerDashboard';
 import DmoDashboard from './pages/DmoDashboard';
+import MedicineRequests from './pages/MedicineRequests';
+import DhsDashboard from './pages/DhsDashboard';
+import CreateVoucher from './pages/CreateVoucher';
+import ReadVoucher from './pages/ReadVoucher';
+import QueryAllmedicine from './pages/QueryAllmedicine';
+import viewAllVouchers from './pages/QueryAllmedicine'
 
 
 function App() {
@@ -26,6 +32,12 @@ function App() {
     <Route path='/moDashboard' element={<MoDashboard/>}/>
     <Route path='/cusDashboard' element={<CustomerDashboard/>}/>
     <Route path='/dmoDashboard' element={<DmoDashboard/>}/>
+    <Route path='/medicineRequests' element={<MedicineRequests/>}/>
+    <Route path='/dhsDashboard' element={<DhsDashboard/>}/>
+    <Route path='/createVoucher' element={<CreateVoucher/>}/>
+    <Route path='/readVoucher' element={<ReadVoucher/>}/>
+    <Route path='/queryAllMedicine' element={<QueryAllmedicine/>}/>
+    <Route path='/queryAllMedicine' element={<QueryAllmedicine/>}/>
     </>
   ))
 

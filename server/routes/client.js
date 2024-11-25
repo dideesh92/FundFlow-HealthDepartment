@@ -52,6 +52,7 @@ class clientApplication {
                 await contract.submit(txnName, {
                     arguments: [...args],
                     transientData: transientData,
+                    endorsingOrganizations:['DMOMSP','MOMSP','DHSMSP'],
                 });
             } else {
                 console.log("Invalid txnType", txnType);

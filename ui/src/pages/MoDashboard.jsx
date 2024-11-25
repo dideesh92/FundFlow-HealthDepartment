@@ -14,8 +14,13 @@ const MoDashboard = () => {
     navigate('/readmed');
   };
 
+  const handleViewAll = () => {
+    // Navigate to the view all medicines page
+    navigate('/queryAllMedicine');
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-10">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-white via-green-200 to-orange-100 py-10">
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">MO Dashboard</h2>
       
       <button
@@ -27,9 +32,16 @@ const MoDashboard = () => {
       
       <button
         onClick={handleViewMedicineRequests}
-        className="w-64 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition focus:outline-none"
+        className="w-64 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition focus:outline-none mb-4"
       >
         Read Medicine
+      </button>
+      
+      <button
+        onClick={handleViewAll}
+        className="w-64 py-3 bg-orange-600 text-white font-bold rounded-lg hover:bg-orange-700 transition focus:outline-none"
+      >
+        View All
       </button>
     </div>
   );

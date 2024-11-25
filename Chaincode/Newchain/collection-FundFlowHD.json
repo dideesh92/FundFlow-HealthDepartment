@@ -1,7 +1,7 @@
 [
   {
     "name": "OrderCollection",
-    "policy": "OR('CUSTOMERMSP.member', 'MOMSP.member','DMOMSP.member')",
+    "policy": "OR('MOMSP.member','DHSMSP.member')",
     "requiredPeerCount": 1,
     "maxPeerCount": 1,
     "blockToLive": 100,

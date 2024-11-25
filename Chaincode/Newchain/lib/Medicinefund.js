@@ -3,17 +3,17 @@
 const { Contract } = require('fabric-contract-api');
 
 class MedicineRequestChaincode extends Contract {
-  
-  
+
+
   async initLedger(ctx) {
     const fundPool = {
-      availableFunds: 100000 
+      availableFunds: 100000
     };
     await ctx.stub.putState('fundPool', Buffer.from(JSON.stringify(fundPool)));
     console.info('Ledger initialized with fund pool:', fundPool);
   }
 
-  
+
   async createMedicineRequest(ctx, requestId, medicineDetailsString, quantityString) {
     const medicineDetails = JSON.parse(medicineDetailsString); // Parse medicineDetails back into an object
     const quantity = parseInt(quantityString); // Convert quantity back to a number
@@ -22,6 +22,7 @@ class MedicineRequestChaincode extends Contract {
       requestId,
       medicineDetails,
       quantity,
+      assetType: 'medicine',
       status: 'Requested',
       requestedBy: 'MO',
       suppliedBy: '',
@@ -32,16 +33,16 @@ class MedicineRequestChaincode extends Contract {
     await ctx.stub.putState(requestId, Buffer.from(JSON.stringify(medicineRequest)));
     console.info('Medicine request created:', medicineRequest);
     return JSON.stringify(medicineRequest);
-}
+  }
 
 
- 
+
   async supplyMedicine(ctx, requestId, billAmount) {
     const medicineRequestAsBytes = await ctx.stub.getState(requestId);
     if (!medicineRequestAsBytes || medicineRequestAsBytes.length === 0) {
       throw new Error(`${requestId} does not exist`);
     }
-    
+
     const medicineRequest = JSON.parse(medicineRequestAsBytes.toString());
     if (medicineRequest.status !== 'Requested') {
       throw new Error(`Medicine request ${requestId} is not in requested state`);
@@ -56,13 +57,13 @@ class MedicineRequestChaincode extends Contract {
     return JSON.stringify(medicineRequest);
   }
 
-  
+
   async verifyAndForwardVoucher(ctx, requestId) {
     const medicineRequestAsBytes = await ctx.stub.getState(requestId);
     if (!medicineRequestAsBytes || medicineRequestAsBytes.length === 0) {
       throw new Error(`${requestId} does not exist`);
     }
-    
+
     const medicineRequest = JSON.parse(medicineRequestAsBytes.toString());
     if (medicineRequest.status !== 'Supplied') {
       throw new Error(`Medicine request ${requestId} is not in supplied state`);
@@ -76,34 +77,49 @@ class MedicineRequestChaincode extends Contract {
     return JSON.stringify(medicineRequest);
   }
 
-  async approveAndSanctionFunds(ctx, requestId) {
-    const medicineRequestAsBytes = await ctx.stub.getState(requestId);
-    if (!medicineRequestAsBytes || medicineRequestAsBytes.length === 0) {
-      throw new Error(`${requestId} does not exist`);
-    }
-    
-    const medicineRequest = JSON.parse(medicineRequestAsBytes.toString());
-    if (medicineRequest.status !== 'Verified') {
-      throw new Error(`Medicine request ${requestId} is not in verified state`);
-    }
 
-    const fundPoolAsBytes = await ctx.stub.getState('fundPool');
-    const fundPool = JSON.parse(fundPoolAsBytes.toString());
 
-    if (fundPool.availableFunds < medicineRequest.billAmount) {
-      throw new Error(`Insufficient funds to sanction for request ${requestId}`);
-    }
 
-    fundPool.availableFunds -= medicineRequest.billAmount;
-    await ctx.stub.putState('fundPool', Buffer.from(JSON.stringify(fundPool)));
 
-    medicineRequest.status = 'Approved and Funded';
-    medicineRequest.approvedBy = 'DHS';
-
-    await ctx.stub.putState(requestId, Buffer.from(JSON.stringify(medicineRequest)));
-    console.info('Funds sanctioned and acknowledged:', medicineRequest);
-    return JSON.stringify(medicineRequest);
+  async voucherExist(ctx, voucherId) {
+    const collectionName = 'OrderCollection';
+    const data = await ctx.stub.getPrivateDataHash(collectionName, voucherId);
+    return (!!data && data.length > 0);
   }
+
+  async createVoucher(ctx, voucherId) {
+    const mspid = ctx.clientIdentity.getMSPID();
+    if (mspid === 'DHSMSP') {
+      const exists = await this.voucherExist(ctx, voucherId);
+      if (exists) {
+        throw new Error(`${voucherId} already exists`);
+      }
+      const voucherAsset = {};
+      const transientData = ctx.stub.getTransient();
+      if (transientData.size === 0 || !transientData.has("requestId") || !transientData.has("amount")) {
+        throw new Error("The expected key was not specified in transient data. Please try again.");
+      }
+      voucherAsset.requestId = transientData.get("requestId").toString();
+      voucherAsset.amount = transientData.get("amount").toString();
+      voucherAsset.assetType = "voucher";
+      voucherAsset.status = "approved";
+      const collectionName = 'OrderCollection';
+      await ctx.stub.putPrivateData(collectionName, voucherId, Buffer.from(JSON.stringify(voucherAsset)));
+    } else {
+      return `Organization with MSP ID ${mspid} cannot perform this action`;
+    }
+  }
+
+  async readVoucher(ctx, voucherId) {
+    const exists = await this.voucherExist(ctx, voucherId);
+    if (!exists) {
+      throw new Error(`The order ${voucherId} does not exist`);
+    }
+    const collectionName = 'OrderCollection';
+    const privateData = await ctx.stub.getPrivateData(collectionName, voucherId);
+    return JSON.parse(privateData.toString());
+  }
+
 
   async queryMedicineRequest(ctx, requestId) {
     const medicineRequestAsBytes = await ctx.stub.getState(requestId);
@@ -113,41 +129,54 @@ class MedicineRequestChaincode extends Contract {
     return medicineRequestAsBytes.toString();
   }
 
-  async queryFundPool(ctx) {
-    const fundPoolAsBytes = await ctx.stub.getState('fundPool');
-    if (!fundPoolAsBytes || fundPoolAsBytes.length === 0) {
-      throw new Error(`Fund pool does not exist`);
-    }
-    return fundPoolAsBytes.toString();
-  }
 
   //rich query
 
+
   async queryMedicineRequestsByStatus(ctx, status) {
     const queryString = {
-        selector: {
-            status: 'Requested'
-        }
+      selector: {
+        status: status, // Dynamically filter by provided status
+      },
     };
 
-    const queryResults = await this.getQueryResultForQueryString(ctx, JSON.stringify(queryString));
-    return queryResults;
-}
+    const resultIterator = await ctx.stub.getQueryResult(JSON.stringify(queryString));
+    const results = await this._getAllResults(resultIterator);
+    return JSON.stringify(results); // Return JSON stringified data
+  }
 
-async getQueryResultForQueryString(ctx, queryString) {
-    const iterator = await ctx.stub.getQueryResult(queryString);
+  // Utility function to process query results
+  async _getAllResults(iterator) {
     const results = [];
     let res = await iterator.next();
 
     while (!res.done) {
-        const record = res.value.value.toString('utf8');
-        results.push(JSON.parse(record));
-        res = await iterator.next();
+      if (res.value) {
+        const Key = res.value.key;
+        const Record = JSON.parse(res.value.value.toString('utf8'));
+        results.push({ Key, Record });
+      }
+      res = await iterator.next();
     }
-    await iterator.close();
-    return JSON.stringify(results);
+
+    await iterator.close(); // Ensure iterator is closed
+    return results;
+  }
+
+// working richquery
+
+  async queryAllmedicine(ctx) {
+    const queryString = {
+        selector: {
+            assetType: 'medicine'
+        }
+    };
+    let resultIterator = await ctx.stub.getQueryResult(JSON.stringify(queryString));
+    let result = await this._getAllResults(resultIterator);
+    return JSON.stringify(result)
 }
 
+ 
 }
 
 module.exports = MedicineRequestChaincode;

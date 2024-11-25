@@ -1,24 +1,22 @@
-const { clientApplication } = require('./client'); // Import client application
+const { clientApplication } = require('./client');
 
-// Initialize the client application
 let userClient = new clientApplication();
 
-// Request ID to query the state of the medicine request
-const requestId = "Req-101"; // Unique identifier for the medicine request
-
-// Query the chaincode function
 userClient.submitTxn(
     "DHS",                          // Organization ID or role
     "fundchannel",                  // Channel name
     "FundFlowHD",                   // Network/contract namespace
     "MedicineRequestChaincode",     // Chaincode name
-    "queryTxn",                     // Transaction type
+    "invokeTxn",                    // Transaction type
     "",                             // Empty string (if unused)
-    "queryMedicineRequest",         // Chaincode function name for querying the state
-    requestId                       // Request ID of the medicine request
+    "queryMedicineRequest",         // Chaincode function name
+    "Req-101"                       // Request ID of the medicine request to query
 ).then(result => {
-    console.log("Query Result:");
-    console.log(new TextDecoder().decode(result)); // Decoding the result buffer to string
+    console.log(new TextDecoder().decode(result)); // Decoding result buffer to string
+    console.log("Medicine request details retrieved successfully");
 }).catch(error => {
     console.error("Error querying medicine request:", error);
 });
+
+
+
