@@ -55,4 +55,3 @@ The Hyperledger Fabric network consists of:
 
 ---
 
-Feel free to contribute to this project or raise issues for improvements! 😊
